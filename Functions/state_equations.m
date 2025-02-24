@@ -13,24 +13,13 @@ function dxdt = state_equations(t, x)
                          cos(x(5))*sin(x(6)) cos(x(4))*cos(x(6))-sin(x(4))*sin(x(5))*sin(x(6)) cos(x(4))*sin(x(5))*sin(x(6))-sin(x(4))*sin(x(6));
                          -sin(x(5)) cos(x(5))*sin(x(4)) cos(x(1))*cos(x(5))];
 
-    param.aero.v2 = norm(x(7:9))*norm(x(7:9));
-    % Compute attack angle safely
-    if x(8) == 0
-        attack_angle = pi/2;
-    else
-        attack_angle = atan(x(9)/x(8));
-    end
-       
-    if param.aero.v2 == 0
-        sideslip_angle = 0; % If velocity is zero, assume zero sideslip
-    else
-        sideslip_angle = asin(x(8) / param.aero.v2); % Safe division
-    end
-
+    param.aero.v2 = norm(x(7:9))^2;
+    attack_angle = atan2(x(8),x(9));
+    sideslip_angle = atan2(x(9),norm(x(7:8)));
     
-    param.geometry.RBV = [-cos(attack_angle)*cos(sideslip_angle) -cos(attack_angle)*sin(sideslip_angle) -sin(attack_angle);
-                           sin(sideslip_angle) -cos(sideslip_angle) 0;
-                          -sin(attack_angle)*cos(sideslip_angle) -sin(attack_angle)*sin(sideslip_angle) cos(attack_angle)];
+    param.geometry.RBV = [[cos(attack_angle), -cos(sideslip_angle)*sin(attack_angle),  sin(attack_angle)*sin(sideslip_angle)]
+                          [sin(attack_angle),  cos(attack_angle)*cos(sideslip_angle), -cos(attack_angle)*sin(sideslip_angle)]
+                          [         0,             sin(sideslip_angle),             cos(sideslip_angle)]];
     
     Cd = param.aero.C0D + param.aero.CalphaD*attack_angle^2 + param.aero.CbetaD*sideslip_angle^2;
     Cs = param.aero.C0S + param.aero.CalphaS*attack_angle^2 + param.aero.CbetaS*sideslip_angle;
@@ -70,8 +59,8 @@ function dxdt = state_equations(t, x)
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
      
-    Fb_xu = Fthruster + Fgravity + Fboyant;
-    Mb_xu = Mboyant + Mthruster;
+    Fb_xu = Fthruster + Fgravity + Fboyant + Faero;
+    Mb_xu = Mboyant + Mthruster +Maero;
     
     % x y z
     dxdt(1:3) = param.geometry.R0B*x(7:9);
