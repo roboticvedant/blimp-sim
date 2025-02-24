@@ -6,6 +6,6 @@ function u = input_function(t)
 
     u.thruster.p = 0;
     u.thruster.q = 0;
-    u.thruster.r = 10;
-    u.thruster.s = 10;
+    u.thruster.r = 0.05;
+    u.thruster.s = 0.05;
 end

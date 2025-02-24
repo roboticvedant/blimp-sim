@@ -13,6 +13,34 @@ function dxdt = state_equations(t, x)
                          cos(x(5))*sin(x(6)) cos(x(4))*cos(x(6))-sin(x(4))*sin(x(5))*sin(x(6)) cos(x(4))*sin(x(5))*sin(x(6))-sin(x(4))*sin(x(6));
                          -sin(x(5)) cos(x(5))*sin(x(4)) cos(x(1))*cos(x(5))];
 
+    param.aero.v2 = norm(x(7:9))^2;
+    attack_angle = atan2(x(8),x(9));
+    sideslip_angle = atan2(x(9),norm(x(7:8)));
+    
+    param.geometry.RBV = [[cos(attack_angle), -cos(sideslip_angle)*sin(attack_angle),  sin(attack_angle)*sin(sideslip_angle)]
+                          [sin(attack_angle),  cos(attack_angle)*cos(sideslip_angle), -cos(attack_angle)*sin(sideslip_angle)]
+                          [         0,             sin(sideslip_angle),             cos(sideslip_angle)]];
+    
+    Cd = param.aero.C0D + param.aero.CalphaD*attack_angle^2 + param.aero.CbetaD*sideslip_angle^2;
+    Cs = param.aero.C0S + param.aero.CalphaS*attack_angle^2 + param.aero.CbetaS*sideslip_angle;
+    Cl = param.aero.C0L + param.aero.CalphaL*attack_angle + param.aero.CbetaL*sideslip_angle^2;
+
+    Cm1 = param.aero.C0M1 + param.aero.CalphaM1*attack_angle + param.aero.CbetaM1*sideslip_angle;
+    Cm2 = param.aero.C0M2 + param.aero.CalphaM2*attack_angle + param.aero.CbetaM2*sideslip_angle^4;
+    Cm3 = param.aero.C0M3 + param.aero.CalphaM3*attack_angle + param.aero.CbetaM3*sideslip_angle;
+    
+    
+    D = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cd;
+    S = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cs;
+    L = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cl;
+
+    M1 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm1 + param.aero.K1*x(10);
+    M2 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm2 + param.aero.K2*x(11);
+    M3 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm3 + param.aero.K3*x(12);
+    Faero = param.geometry.RBV * [-D; S; -L];
+
+    Maero = param.geometry.RBV * [M1; M2; M3];
+
     Fth_P = param.thruster.Hp(1:3,1:3)*[0; 0; u.thruster.p];
     Fth_Q = param.thruster.Hq(1:3,1:3)*[0; 0; u.thruster.q];
     Fth_R = param.thruster.Hr(1:3,1:3)*[0; 0; u.thruster.r];
@@ -30,10 +58,9 @@ function dxdt = state_equations(t, x)
         + cross(param.thruster.Hs(1:3,4), Fth_S);
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
-
-
-    Fb_xu = Fthruster + Fgravity + Fboyant;
-    Mb_xu = Mboyant + Mthruster;
+     
+    Fb_xu = Fthruster + Fgravity + Fboyant + Faero;
+    Mb_xu = Mboyant + Mthruster +Maero;
     
     % x y z
     dxdt(1:3) = param.geometry.R0B*x(7:9);
