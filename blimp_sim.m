@@ -3,7 +3,7 @@ addpath("Functions/")
 %% Define Simulation Parameters
 % Time settings
 t_start = 0;          % Start time
-t_end = 10;          % End time
+t_end = 5;          % End time
 tspan = [t_start t_end];
 
 % Initialize state vector

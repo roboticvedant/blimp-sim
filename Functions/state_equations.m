@@ -62,8 +62,8 @@ function dxdt = state_equations(t, x)
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
 
-    Fb_xu = Fthruster + Fgravity + Fboyant + Faero;
-    Mb_xu = Mboyant + Mthruster + Maero;
+    Fb_xu = Fthruster + Fgravity + Fboyant ;
+    Mb_xu = Mboyant + Mthruster ;
     
     % Store velocity squared for debugging
     debug.v2 = [debug.v2; param.aero.v2];
