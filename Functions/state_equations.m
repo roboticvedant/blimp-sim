@@ -11,17 +11,42 @@ function dxdt = state_equations(t, x)
     param.geometry.T = [cos(x(6))*cos(x(5)) -sin(x(6)) 0;
                         sin(x(6))*cos(x(5)) cos(x(6)) 0;
                         -sin(x(5)) 0 1];
+    param.geometry.T = param.geometry.T + 1e-10*eye(size(param.geometry.T));
+
     param.geometry.R0B = [cos(x(5))*cos(x(6)) cos(x(6))*sin(x(4))*sin(x(5))-cos(x(4))*sin(x(6)) cos(x(4))*cos(x(6))*sin(x(5))+sin(x(4))*sin(x(6));
                          cos(x(5))*sin(x(6)) cos(x(4))*cos(x(6))-sin(x(4))*sin(x(5))*sin(x(6)) cos(x(4))*sin(x(5))*sin(x(6))-sin(x(4))*sin(x(6));
                          -sin(x(5)) cos(x(5))*sin(x(4)) cos(x(1))*cos(x(5))];
 
+    param.geometry.R0B = param.geometry.R0B + 1e-10*eye(size(param.geometry.R0B));
+
+    [U, ~, V] = svd(param.geometry.R0B); % Singular Value Decomposition
+    param.geometry.R0B = U * V';  % Ensure R is a valid rotation matrix
+
+    [U, ~, V] = svd(param.geometry.T); % Singular Value Decomposition
+    param.geometry.T = U * V';  % Ensure T is a valid rotation matrix
+   
     param.aero.v2 = norm(x(7:9))^2;
-    attack_angle = atan2(x(8),x(9));
-    sideslip_angle = atan2(x(9),norm(x(7:8)));
+    if param.aero.v2 <= 1e-6
+        Faero = zeros(3,1);
+       if norm(x(10:12)) > 1e-6
+            Cdamping = diag([param.aero.K1, param.aero.K2, param.aero.K3]);
+            Maero = Cdamping * x(10:12);
+        else
+            Maero = zeros(3,1);
+       end  
+    else
+        Rbb = [1 0 0; 0 -1 0; 0 0 -1];
+        velA = Rbb*x(7:9);
+        ua = velA(1);
+        va = velA(2);
+        wa = velA(3);
+        V = norm(velA);
+        attack_angle = atan(wa/ua);
+        sideslip_angle = asin(va/V);
     
-    param.geometry.RBV = [[cos(attack_angle), -cos(sideslip_angle)*sin(attack_angle),  sin(attack_angle)*sin(sideslip_angle)]
-                          [sin(attack_angle),  cos(attack_angle)*cos(sideslip_angle), -cos(attack_angle)*sin(sideslip_angle)]
-                          [         0,             sin(sideslip_angle),             cos(sideslip_angle)]];
+    param.geometry.RBV = [[cos(attack_angle)*cos(sideslip_angle), -cos(attack_angle)*sin(sideslip_angle),  -sin(attack_angle)]
+                          [sin(sideslip_angle),  cos(sideslip_angle), 0]
+                          [sin(attack_angle)*cos(sideslip_angle), -sin(attack_angle)*sin(sideslip_angle), cos(attack_angle)]];
     
     Cd = param.aero.C0D + param.aero.CalphaD*attack_angle^2 + param.aero.CbetaD*sideslip_angle^2;
     Cs = param.aero.C0S + param.aero.CalphaS*attack_angle^2 + param.aero.CbetaS*sideslip_angle;
@@ -39,10 +64,10 @@ function dxdt = state_equations(t, x)
     M1 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm1 + param.aero.K1*x(10);
     M2 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm2 + param.aero.K2*x(11);
     M3 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm3 + param.aero.K3*x(12);
-    Faero = param.geometry.RBV * [-D; S; -L];
+    Faero = Rbb*param.geometry.RBV * [-D; S; -L];
 
-    Maero = param.geometry.RBV * [M1; M2; M3];
-
+    Maero = Rbb*param.geometry.RBV * [M1; M2; M3];
+    end
 
     Fth_P = param.thruster.Hp(1:3,1:3)*[0; 0; u.thruster.p];
     Fth_Q = param.thruster.Hq(1:3,1:3)*[0; 0; u.thruster.q];
@@ -62,8 +87,39 @@ function dxdt = state_equations(t, x)
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
 
-    Fb_xu = Fthruster + Fgravity + Fboyant ;
-    Mb_xu = Mboyant + Mthruster ;
+    % Initialize ground interaction forces and moments
+    Fground = zeros(3, 1);
+    % Mground = zeros(3, 1);
+    
+    % Define ground parameters
+    ground_height = 0; % Set this to your desired ground height
+    ground_k = 1e5; % Spring constant for ground interaction
+    ground_b = 1e3; % Damping coefficient for ground interaction
+    
+    % Get vehicle height in world coordinates
+    z_height = x(3); % Assuming x(3) is the z-position in world frame
+    
+    % Check if vehicle is at or below ground level
+    if z_height <= ground_height
+        disp("Collision with Ground !!")
+        % Calculate penetration depth
+        penetration = ground_height - z_height;
+        
+        % Calculate vertical velocity component
+        vel_world = (param.geometry.R0B * x(7:9));
+        
+        % Calculate normal force (spring-damper model)
+        normal_force_magnitude = ground_k * penetration - ground_b * min(0, vel_world(3));
+        
+        % Apply normal force in world z direction
+        normal_force_world = [0; 0; normal_force_magnitude];
+        
+        % Convert to body frame
+        Fground = param.geometry.R0B' * normal_force_world;
+    end
+
+    Fb_xu = Fthruster + Fgravity + Fboyant + Faero + Fground ;
+    Mb_xu = - Mboyant + Mthruster + Maero ;
     
     % Store velocity squared for debugging
     debug.v2 = [debug.v2; param.aero.v2];
@@ -78,22 +134,22 @@ function dxdt = state_equations(t, x)
     debug.Mb_xu = [debug.Mb_xu, Mb_xu]; % Net moment (3xN)
     debug.Mthruster = [debug.Mthruster, Mthruster]; % Thruster moment (3xN)
     debug.Maero = [debug.Maero, Maero]; % Aerodynamic moment (3xN)
-    debug.attack_angle = [debug.attack_angle, attack_angle];
-    debug.sideslip_angle = [debug.sideslip_angle, sideslip_angle]; 
-
-    debug.Cd = [debug.Cd, Cd];
-    debug.Cs = [debug.Cs, Cs];
-    debug.Cl = [debug.Cl, Cl];
-    debug.Cm1 = [debug.Cm1, Cm1];
-    debug.Cm2= [debug.Cm2, Cm2];
-    debug.Cm3 = [debug.Cm3, Cm3];
-
-    debug.D = [debug.D, D];
-    debug.S=  [debug.S, S];
-    debug.L = [debug.L, L];
-    debug.M1 = [debug.M1, M1];
-    debug.M2=  [debug.M2, M2];
-    debug.M3 = [debug.M3, M3];
+    % debug.attack_angle = [debug.attack_angle, attack_angle];
+    % debug.sideslip_angle = [debug.sideslip_angle, sideslip_angle]; 
+    % 
+    % debug.Cd = [debug.Cd, Cd];
+    % debug.Cs = [debug.Cs, Cs];
+    % debug.Cl = [debug.Cl, Cl];
+    % debug.Cm1 = [debug.Cm1, Cm1];
+    % debug.Cm2= [debug.Cm2, Cm2];
+    % debug.Cm3 = [debug.Cm3, Cm3];
+    % 
+    % debug.D = [debug.D, D];
+    % debug.S=  [debug.S, S];
+    % debug.L = [debug.L, L];
+    % debug.M1 = [debug.M1, M1];
+    % debug.M2=  [debug.M2, M2];
+    % debug.M3 = [debug.M3, M3];
 
     
     % x y z
