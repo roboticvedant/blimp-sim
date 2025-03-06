@@ -13,9 +13,15 @@ function dxdt = state_equations(t, x)
                         -sin(x(5)) 0 1];
     param.geometry.T = param.geometry.T + 1e-10*eye(size(param.geometry.T));
 
-    param.geometry.R0B = [cos(x(5))*cos(x(6)) cos(x(6))*sin(x(4))*sin(x(5))-cos(x(4))*sin(x(6)) cos(x(4))*cos(x(6))*sin(x(5))+sin(x(4))*sin(x(6));
-                         cos(x(5))*sin(x(6)) cos(x(4))*cos(x(6))-sin(x(4))*sin(x(5))*sin(x(6)) cos(x(4))*sin(x(5))*sin(x(6))-sin(x(4))*sin(x(6));
-                         -sin(x(5)) cos(x(5))*sin(x(4)) cos(x(1))*cos(x(5))];
+    param.geometry.R0B = [cos(x(6)) -sin(x(6)) 0;
+        sin(x(6)) cos(x(6)) 0;
+        0 0 1] * ...
+        [cos(x(5)) 0 sin(x(5));
+         0 1 0;
+        -sin(x(5)) 0 cos(x(5))] * ...
+        [1 0 0;
+        0 cos(x(4)) -sin(x(4));
+        0 sin(x(4)) cos(x(4))];
 
     param.geometry.R0B = param.geometry.R0B + 1e-10*eye(size(param.geometry.R0B));
 
@@ -76,9 +82,9 @@ function dxdt = state_equations(t, x)
 
     Fthruster = Fth_P + Fth_Q + Fth_R + Fth_S;
 
-    Fgravity = param.geometry.R0B * [0; 0; -param.m*param.physical.g];
+    Fgravity = param.geometry.R0B' * [0; 0; -param.m*param.physical.g];
 
-    Fboyant = param.geometry.R0B * [0; 0; param.physical.rho*param.geometry.vol_disp*param.physical.g];
+    Fboyant = param.geometry.R0B' * [0; 0; param.physical.rho*param.geometry.vol_disp*param.physical.g];
     
     Mthruster = cross(param.thruster.Hp(1:3,4), Fth_P) ...
         + cross(param.thruster.Hq(1:3,4), Fth_Q) ...
@@ -87,39 +93,26 @@ function dxdt = state_equations(t, x)
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
 
-    % Initialize ground interaction forces and moments
     Fground = zeros(3, 1);
     % Mground = zeros(3, 1);
-    
     % Define ground parameters
-    ground_height = 0; % Set this to your desired ground height
-    ground_k = 1e5; % Spring constant for ground interaction
-    ground_b = 1e3; % Damping coefficient for ground interaction
-    
-    % Get vehicle height in world coordinates
-    z_height = x(3); % Assuming x(3) is the z-position in world frame
-    
+    ground_height = 0; % Set this to  desired ground height
+     
     % Check if vehicle is at or below ground level
-    if z_height <= ground_height
+    if x(3) <= ground_height
         disp("Collision with Ground !!")
-        % Calculate penetration depth
-        penetration = ground_height - z_height;
-        
-        % Calculate vertical velocity component
-        vel_world = (param.geometry.R0B * x(7:9));
-        
-        % Calculate normal force (spring-damper model)
-        normal_force_magnitude = ground_k * penetration - ground_b * min(0, vel_world(3));
-        
-        % Apply normal force in world z direction
-        normal_force_world = [0; 0; normal_force_magnitude];
-        
-        % Convert to body frame
-        Fground = param.geometry.R0B' * normal_force_world;
+        % disp(t)
+        % disp(x)
+        Fnet_body = Fthruster + Fgravity + Fboyant + Faero;
+        Fnet_world = param.geometry.R0B * Fnet_body;
+    
+        if Fnet_world(3) < 0
+            Fground = param.geometry.R0B' * [0; 0; -Fnet_world(3)];
+        end
     end
 
     Fb_xu = Fthruster + Fgravity + Fboyant + Faero + Fground ;
-    Mb_xu = - Mboyant + Mthruster + Maero ;
+    Mb_xu = Mboyant + Mthruster + Maero ;
     
     % Store velocity squared for debugging
     debug.v2 = [debug.v2; param.aero.v2];

@@ -4,7 +4,7 @@ function param = init_params()
 
     %Blimp Geometry Param
     param.geometry = struct();
-    param.geometry.I = 0.1*eye(3); % make this bigger
+    param.geometry.I = 0.5*eye(3); % make this bigger
     param.geometry.vol_disp = 0.11446249033256; % m^3 right now just made this up for neutral weight
     param.geometry.HB_COB = [ eye(3) [0;0;0.3];
                                0 0 0 1];

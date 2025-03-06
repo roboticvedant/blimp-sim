@@ -3,14 +3,14 @@ addpath("Functions/")
 %% Define Simulation Parameters
 % Time settings
 t_start = 0;          % Start time
-t_end = 10;          % End time
+t_end = 15;          % End time
 tspan = [t_start t_end];
 
 % Initialize state vector
 n = 12;               % Number of states
 x0 = zeros(n,1);        % Initial conditions - replace with your initial states
 x0(1:3) = [0;0;0.4];
-x0(4) = deg2rad(5);
+x0(5) = deg2rad(10);
 
 
 % x0(10:12) = [0.05; 0.05; 0.05];  % Small nonzero angular velocity
