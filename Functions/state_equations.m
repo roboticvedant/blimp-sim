@@ -80,6 +80,9 @@ function dxdt = state_equations(t, x)
     Fth_R = param.thruster.Hr(1:3,1:3)*[0; 0; u.thruster.r];
     Fth_S = param.thruster.Hs(1:3,1:3)*[0; 0; u.thruster.s];
 
+    debug.FthrusterP = [debug.FthrusterP, Fth_P];
+    debug.FthrusterQ = [debug.FthrusterQ, Fth_Q];
+
     Fthruster = Fth_P + Fth_Q + Fth_R + Fth_S;
 
     Fgravity = param.geometry.R0B' * [0; 0; -param.m*param.physical.g];
@@ -90,6 +93,9 @@ function dxdt = state_equations(t, x)
         + cross(param.thruster.Hq(1:3,4), Fth_Q) ...
         + cross(param.thruster.Hr(1:3,4), Fth_R) ...
         + cross(param.thruster.Hs(1:3,4), Fth_S);
+
+    debug.MthrusterP = [debug.MthrusterP, cross(param.thruster.Hp(1:3,4), Fth_P)];
+    debug.MthrusterQ = [debug.MthrusterQ, cross(param.thruster.Hq(1:3,4), Fth_Q)];
 
     Mboyant = cross(param.geometry.HB_COB(1:3,4), Fboyant);
 

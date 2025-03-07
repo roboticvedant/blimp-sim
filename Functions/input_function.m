@@ -4,8 +4,8 @@ function u = input_function(t)
     u = struct();
     u.thruster = struct();  
 
-    u.thruster.p = 0.00*(1-heaviside(t-1));
-    u.thruster.q = 0.00*(1-heaviside(t-1));
-    u.thruster.r = 0.0*(1-heaviside(t-5));
-    u.thruster.s = 0.0*(1-heaviside(t-5));
+    u.thruster.p =  -0.00*(1-heaviside(t-100));
+    u.thruster.q = -0.0*(1-heaviside(t-100));
+    u.thruster.r = 0.0*(1-heaviside(t-100));
+    u.thruster.s = 0.0*(1-heaviside(t-100));
 end
