@@ -72,7 +72,7 @@ function dxdt = state_equations(t, x)
     M3 = (0.5)*param.physical.rho*param.aero.v2*param.aero.A*Cm3 + param.aero.K3*x(12);
     Faero = Rbb*param.geometry.RBV * [-D; S; -L];
 
-    Maero = Rbb*param.geometry.RBV * [M1; M2; M3];
+    Maero = Rbb*param.geometry.RBV * [M1; 0; 0];
     end
 
     Fth_P = param.thruster.Hp(1:3,1:3)*[0; 0; u.thruster.p];

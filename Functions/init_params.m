@@ -4,7 +4,8 @@ function param = init_params()
 
     %Blimp Geometry Param
     param.geometry = struct();
-    param.geometry.I = 0.5*eye(3); % make this bigger
+    param.geometry.I = diag([0.0058,0.0058,0.0041]);
+    % param.geometry.I = 0.5*eye(3); % make this bigger
     param.geometry.vol_disp = 0.11446249033256; % m^3 right now just made this up for neutral weight
     param.geometry.HB_COB = [ eye(3) [0;0;0.3];
                                0 0 0 1];
@@ -22,6 +23,7 @@ function param = init_params()
     param.aero.C0D = 0.243;
     param.aero.C0S = 0.001;
     param.aero.C0L = 0.159;
+
     param.aero.C0M1 = 0.001;
     param.aero.C0M2 = 0.057;
     param.aero.C0M3 = 0.001;
@@ -29,14 +31,16 @@ function param = init_params()
     param.aero.CalphaD = 4.419;
     param.aero.CalphaS = -0.074;
     param.aero.CalphaL = 2.938;
-    param.aero.CalphaM1 = -0.030;
+    
+    param.aero.CalphaM1 = -0.001;
     param.aero.CalphaM2 = 0.093;
     param.aero.CalphaM3 = -0.001;
 
     param.aero.CbetaD = 7.508;
     param.aero.CbetaS = -2.113;
     param.aero.CbetaL = 4.554;
-    param.aero.CbetaM1 = -0.526;
+    
+    param.aero.CbetaM1 = -0.093;
     param.aero.CbetaM2 = 5.236;
     param.aero.CbetaM3 = -0.093;
 

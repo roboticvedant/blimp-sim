@@ -3,14 +3,14 @@ addpath("Functions/")
 %% Define Simulation Parameters
 % Time settings
 t_start = 0;          % Start time
-t_end = 25;          % End time
+t_end = 100;          % End time
 tspan = [t_start t_end];
 
 % Initialize state vector
 n = 12;               % Number of states
 x0 = zeros(n,1);        % Initial conditions - replace with your initial states
 x0(1:3) = [0;0;0.4];
-x0(6) = deg2rad(15);
+x0(4) = deg2rad(0);
 
 
 % x0(10:12) = [0.05; 0.05; 0.05];  % Small nonzero angular velocity
@@ -65,8 +65,11 @@ options = odeset('RelTol', 1e-2, 'AbsTol', 1e-3, 'Stats','on');
 
 figure;
 plot3(x(:,1),x(:,2),x(:,3))
+xlabel("X (m)");
+ylabel("Y (m)");
+zlabel("Z (m)");
 grid on;
 title("Trajectory of Blimp")
 
-real_time_plot(t, x);
+real_time_plot(t, x, 'TimeScale', 20);
 
