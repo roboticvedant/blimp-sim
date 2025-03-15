@@ -7,7 +7,7 @@ function dxdt = state_equations(t, x)
 
     dxdt = zeros(12, 1);
     % Get input at current time
-    u = input_function(t);
+    u = input_function(t, x);
     param.geometry.T = [cos(x(6))*cos(x(5)) -sin(x(6)) 0;
                         sin(x(6))*cos(x(5)) cos(x(6)) 0;
                         -sin(x(5)) 0 1];
@@ -47,7 +47,7 @@ function dxdt = state_equations(t, x)
         va = velA(2);
         wa = velA(3);
         V = norm(velA);
-        attack_angle = atan(wa/ua);
+        attack_angle = atan2(wa,ua);
         sideslip_angle = asin(va/V);
     
     param.geometry.RBV = [[cos(attack_angle)*cos(sideslip_angle), -cos(attack_angle)*sin(sideslip_angle),  -sin(attack_angle)]

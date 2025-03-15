@@ -29,5 +29,9 @@ I_baloon_COM = Ibaloon + mass_helium* ...
 I_gondola = [1.078e5 495.763 1937.146;
             495.763 1.236e5 -1835.888;
             1937.146 -1835.888 76262.526]*1e-9;
-
+RCOM_CAD = [0 0 -1;
+            -1 0 0;
+            0 1 0];
+I_gondola_new = RCOM_CAD'*I_gondola*RCOM_CAD
 I_tensor = I_gondola+I_baloon_COM
+I_tensor = I_gondola_new+I_baloon_COM
