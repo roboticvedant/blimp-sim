@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MF0 version="1.1" packageUris="http://schema.mathworks.com/mf0/faultinfo_datamodel/R2021a">
+  <faultinfo.FaultContainerSet type="faultinfo.FaultContainerSet" uuid="56f0a1db-46a9-48d8-ad0b-331b8e39b5de">
+    <conditionals type="faultinfo.conditional.Conditional" uuid="9b84bdb3-74c7-4d8e-967d-08019225d732">
+      <checksum>00000000-0000-0000-0000-000000000000</checksum>
+      <condition>x == true</condition>
+      <mustBeLogged>false</mustBeLogged>
+      <name>SampleConditional</name>
+      <resyncRefBlkID></resyncRefBlkID>
+      <resyncUUID>00000000-0000-0000-0000-000000000000</resyncUUID>
+      <symbols type="faultinfo.conditional.ExpressionSymbol" uuid="b2423dec-9149-450a-a10f-e3c4879e0ead">
+        <expression>true</expression>
+        <name>x</name>
+      </symbols>
+    </conditionals>
+    <isEnabled>false</isEnabled>
+    <lastUpdatedAt>2025-03-20T15:34:11</lastUpdatedAt>
+    <modelName>blimp_state_space</modelName>
+    <modelUUID>25e72b8e-19d5-49a3-8d6d-b7a74d8f0f58</modelUUID>
+  </faultinfo.FaultContainerSet>
+</MF0>
